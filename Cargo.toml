@@ -1,0 +1,12 @@
+[package]
+name = "mineswipper"
+version = "0.1.0"
+authors = ["aspedrosa <aspedrosa@ua.pt>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rand = "0.8.3"
+itertools = "0.10.0"
+dialoguer = "0.7.1"
