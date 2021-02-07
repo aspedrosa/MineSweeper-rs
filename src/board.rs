@@ -1,13 +1,13 @@
-use itertools::{Itertools, enumerate};
+use ansi_term;
+use itertools::{enumerate, Itertools};
 use rand::Rng;
 use std::collections::HashSet;
 use std::iter::FromIterator;
-use ansi_term;
 
 use crate::input::arguments::Parameters;
 use core::fmt;
+use std::borrow::{Borrow, BorrowMut};
 use std::fmt::Formatter;
-use std::borrow::{BorrowMut, Borrow};
 
 pub enum GameResult {
     Lost,
@@ -59,18 +59,15 @@ impl fmt::Display for Cell {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         if self.marked {
             write!(f, "{}", ansi_term::Color::Red.paint("X"))
-        }
-        else {
+        } else {
             if self.dug {
                 self.value.fmt(f)
-            }
-            else {
+            } else {
                 write!(f, "?")
             }
         }
     }
 }
-
 
 pub struct Board {
     rows: u8,
@@ -180,7 +177,8 @@ impl Board {
 
     fn place_numbers(&mut self, mines: HashSet<(u8, u8)>) {
         for mine in mines.iter() {
-            for cell in self.generate_ring(*mine)
+            for cell in self
+                .generate_ring(*mine)
                 .filter(|cell| !mines.contains(&(cell.0 as u8, cell.1 as u8)))
                 .collect::<Vec<(i16, i16)>>()
             {
@@ -199,19 +197,18 @@ impl Board {
                 CellValue::Mine => {
                     self.deadly_mine = Some(play);
                     return GameResult::Lost;
-                },
+                }
                 CellValue::Number(_) => {
                     self.cells_to_dig -= 1;
                     cell.dug = true
-                },
+                }
                 CellValue::Empty => self.propagate_dig(play),
             }
         }
 
         if self.cells_to_dig == 0 {
             for row in self.board.iter_mut() {
-                row
-                    .iter_mut()
+                row.iter_mut()
                     .filter(|cell| cell.value == CellValue::Mine)
                     .for_each(|cell| cell.marked = true);
             }
@@ -222,13 +219,15 @@ impl Board {
         return GameResult::Continue;
     }
 
-    fn generate_ring(&self, (row, col): (u8, u8)) -> impl Iterator<Item=(i16, i16)> + '_ {
+    fn generate_ring(&self, (row, col): (u8, u8)) -> impl Iterator<Item = (i16, i16)> + '_ {
         return (-1..=1)
             .chain(-1..=1)
             .combinations_with_replacement(2)
             .unique()
             .map(move |v| (row as i16 + v[0], col as i16 + v[1]))
-            .filter(move |(r, c)| *r >= 0 && *r < self.rows as i16 && *c >= 0 && *c < self.columns as i16);
+            .filter(move |(r, c)| {
+                *r >= 0 && *r < self.rows as i16 && *c >= 0 && *c < self.columns as i16
+            });
     }
 
     fn propagate_dig(&mut self, (initial_row, initial_col): (u8, u8)) {
@@ -237,7 +236,7 @@ impl Board {
 
         let mut seen = HashSet::<(i16, i16)>::new();
 
-        while let Some((r, c)) = to_propagate.pop()  {
+        while let Some((r, c)) = to_propagate.pop() {
             let cell = &mut self.board[r as usize][c as usize];
             cell.dug = true;
             cell.marked = false;
@@ -251,9 +250,9 @@ impl Board {
 
             to_propagate.extend(
                 self.generate_ring((r as u8, c as u8))
-                .filter(|(r, c)| self.board[*r as usize][*c as usize].value != CellValue::Mine)
-                .filter(|(r, c)| !self.board[*r as usize][*c as usize].dug)
-                .filter(|cell| !seen.contains(cell))
+                    .filter(|(r, c)| self.board[*r as usize][*c as usize].value != CellValue::Mine)
+                    .filter(|(r, c)| !self.board[*r as usize][*c as usize].dug)
+                    .filter(|cell| !seen.contains(cell)),
             )
         }
     }
@@ -277,17 +276,16 @@ impl Board {
             for (j, cell) in enumerate(row) {
                 if !cell.marked {
                     match cell.value {
-                        CellValue::Mine => {
-                            match self.deadly_mine {
-                                Some(deadly_mine) if deadly_mine == (i as u8, j as u8) => print!("{}", ansi_term::Color::Red.paint("O")),
-                                _ => print!("{}", ansi_term::Color::Yellow.paint("O")),
+                        CellValue::Mine => match self.deadly_mine {
+                            Some(deadly_mine) if deadly_mine == (i as u8, j as u8) => {
+                                print!("{}", ansi_term::Color::Red.paint("O"))
                             }
+                            _ => print!("{}", ansi_term::Color::Yellow.paint("O")),
                         },
                         v if cell.dug => print!("{}", v),
                         _ => print!("?"),
                     }
-                }
-                else {
+                } else {
                     match cell.value {
                         CellValue::Mine => print!("{}", ansi_term::Color::Green.paint("X")),
                         _ => print!("{}", ansi_term::Color::Red.paint("X")),

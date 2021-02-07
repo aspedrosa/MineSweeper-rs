@@ -90,9 +90,7 @@ fn handle_cell(inputs: &Vec<&str>, first_index: u8) -> Result<(u8, u8), InvalidP
         Err(_) => return Err(InvalidPlay {}),
     };
 
-    return Ok(
-        (row, column)
-    );
+    return Ok((row, column));
 }
 
 /// The first play only contains the target cell and the play
@@ -110,12 +108,10 @@ pub fn read_first_play() -> Result<Play, InvalidPlay> {
 
     let cell = handle_cell(&inputs, 0)?;
 
-    return Ok(
-        Play {
-            mode: PlayMode::Dig,
-            cell: Some(cell),
-        }
-    );
+    return Ok(Play {
+        mode: PlayMode::Dig,
+        cell: Some(cell),
+    });
 }
 
 /// Following plays must contain both the play mode and the target cell
