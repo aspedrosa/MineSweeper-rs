@@ -1,3 +1,5 @@
+//! All the game logic is in this module
+
 use ansi_term;
 use itertools::{enumerate, Itertools};
 use rand::Rng;
@@ -9,12 +11,15 @@ use core::fmt;
 use std::borrow::{Borrow, BorrowMut};
 use std::fmt::Formatter;
 
+/// Returned by this module so the main
+///  function know if the game should continue.
 pub enum GameResult {
     Lost,
     Won,
     Continue,
 }
 
+/// Possible value of a cell
 #[derive(PartialEq, Eq, Clone, Copy)]
 enum CellValue {
     Empty,
@@ -23,6 +28,7 @@ enum CellValue {
 }
 
 impl fmt::Display for CellValue {
+    /// Color based on the ones present in http://minesweeperonline.com/
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             CellValue::Empty => write!(f, " "),
@@ -41,6 +47,9 @@ impl fmt::Display for CellValue {
 }
 
 impl CellValue {
+    /// Is self type Number.
+    ///
+    /// TODO can I do `var == CellValue::Number(_)` ?
     fn is_number(&self) -> bool {
         match self {
             CellValue::Number(_) => true,
@@ -49,13 +58,19 @@ impl CellValue {
     }
 }
 
+/// A cell on the playing board.
 struct Cell {
+    /// If the user already dug this cell.
     dug: bool,
+    /// If the user marked this cell as a mine.
     marked: bool,
     value: CellValue,
 }
 
 impl fmt::Display for Cell {
+    /// if the cell is mark print a red `X`,
+    ///  else if the user already dug the cell use
+    ///  its fmt method else print `?`
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         if self.marked {
             write!(f, "{}", ansi_term::Color::Red.paint("X"))
@@ -69,17 +84,30 @@ impl fmt::Display for Cell {
     }
 }
 
+/// Contains all the game data.
 pub struct Board {
+    /// Number of rows of the board
     rows: u8,
+    /// Number of columns of the board
     columns: u8,
+    /// Number of min on the board
     mines_count: u8,
+    /// Remaining cell to dig.
+    /// Used to know if the used won.
     cells_to_dig: u16,
+    /// After the user loses this will contain
+    ///  the coordinates for the mine that he
+    ///  dug. Before that contains `None`.
     deadly_mine: Option<(u8, u8)>,
 
+    /// Board of cells
     board: Vec<Vec<Cell>>,
 }
 
 impl Board {
+    /// Constructor
+    ///
+    /// Fills the board with cell with [Empty](CellValue::Empty) value.
     pub fn new(params: &Parameters) -> Board {
         let mut board = Vec::<Vec<Cell>>::with_capacity(params.rows() as usize);
 
@@ -105,6 +133,15 @@ impl Board {
         }
     }
 
+    /// Places mines and numbers on the board.
+    ///
+    /// Called only after the first play.
+    ///
+    /// Before placing mines and numbers creates
+    ///  an empty area around the cell that the
+    ///  user choose on the first play.
+    ///
+    /// TODO number of cells of the empty area is hardcoded
     pub fn build(&mut self, start_cell: (u8, u8)) {
         self.board[start_cell.0 as usize][start_cell.1 as usize].value = CellValue::Empty;
 
@@ -148,6 +185,13 @@ impl Board {
         self.propagate_dig(start_cell);
     }
 
+    /// Place the mines, avoiding the calculated initial empty area.
+    ///
+    /// The mines coordinates are returned to be used on the
+    ///  [place_numbers](Board::place_numbers) method.
+    ///
+    /// TODO bug: a mine with mines on all fours straight directions
+    ///  can happen
     fn place_mines(&mut self, initial_empty_cells: &HashSet<(u8, u8)>) -> HashSet<(u8, u8)> {
         let mut mines = HashSet::with_capacity(self.mines_count as usize);
 
@@ -175,6 +219,8 @@ impl Board {
         return mines;
     }
 
+    /// Go over all mines and turn their values into
+    ///  [numbers](CellValue::Number) incrementing their count.
     fn place_numbers(&mut self, mines: HashSet<(u8, u8)>) {
         for mine in mines.iter() {
             for cell in self
@@ -190,6 +236,20 @@ impl Board {
         }
     }
 
+    /// Method called for the [Dig](crate::input::plays::PlayMode::Dig) play.
+    ///
+    /// If the target cell is already dug or marked nothing happens.
+    ///
+    /// If the target is a mine the game ends and the user loses.
+    ///
+    /// If the target is a number decrement cells to dig
+    ///  and set dug to true.
+    ///
+    /// If the target is empty propagate the dig action
+    ///  to all empty adjacent cells.
+    ///
+    /// If there is no more cell to dig, the game ends and the
+    ///  user wins.
     pub fn dig(&mut self, play: (u8, u8)) -> GameResult {
         let mut cell = &mut self.board[play.0 as usize][play.1 as usize];
         if !cell.dug && !cell.marked {
@@ -219,6 +279,7 @@ impl Board {
         return GameResult::Continue;
     }
 
+    /// Auxiliary method to generate all adjacent cells of a specific cell.
     fn generate_ring(&self, (row, col): (u8, u8)) -> impl Iterator<Item = (i16, i16)> + '_ {
         return (-1..=1)
             .chain(-1..=1)
@@ -230,6 +291,10 @@ impl Board {
             });
     }
 
+    /// Method to show all cells around a cell with value [Empty](CellValue::Empty).
+    ///
+    /// If its neighbours are also cell with [Empty](CellValue::Empty) it propagates
+    ///  the effect.
     fn propagate_dig(&mut self, (initial_row, initial_col): (u8, u8)) {
         let mut to_propagate = Vec::new();
         to_propagate.push((initial_row as i16, initial_col as i16));
@@ -257,6 +322,9 @@ impl Board {
         }
     }
 
+    /// Method called for the [Mark](crate::input::plays::PlayMode::Mark) play.
+    ///
+    /// If the the cell is not dug nothing happens.
     pub fn mark(&mut self, (row, col): (u8, u8)) {
         let cell = &mut self.board[row as usize][col as usize];
         if !cell.dug {
@@ -264,6 +332,9 @@ impl Board {
         }
     }
 
+    /// Method called for the [Unmark](crate::input::plays::PlayMode::Unmark) play.
+    ///
+    /// If the the cell is not dug nothing happens.
     pub fn unmark(&mut self, (row, col): (u8, u8)) {
         let cell = &mut self.board[row as usize][col as usize];
         if !cell.dug {
@@ -271,6 +342,7 @@ impl Board {
         }
     }
 
+    /// Method called when the game ends to print a compact version of the board.
     pub fn finish(&self) {
         for (i, row) in enumerate(&self.board) {
             for (j, cell) in enumerate(row) {
@@ -300,6 +372,8 @@ impl Board {
     }
 }
 
+/// Auxiliary function to print horizontal bars above and under the board
+///  so its easier to know the coordinates of a cell.
 fn print_horizontal_bar(f: &mut Formatter<'_>, columns: i32) -> fmt::Result {
     write!(f, "   ")?;
     for i in 0..columns {
@@ -311,16 +385,20 @@ fn print_horizontal_bar(f: &mut Formatter<'_>, columns: i32) -> fmt::Result {
 }
 
 impl fmt::Display for Board {
+    /// Used to print the board between plays.
+    ///
+    /// Prints auxiliary numbers around the board so its easier
+    ///  for the user to know the coordinates of a cell.
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         print_horizontal_bar(f, self.columns as i32)?;
 
         for (i, row) in enumerate(self.board.iter()) {
-            write!(f, "{:2}  ", i)?;
+            write!(f, "{:2}  ", i)?;  // auxiliary bar on the left of coordinates
             for cell in row {
                 cell.fmt(f)?;
                 write!(f, "  ")?;
             }
-            writeln!(f, "{}", i)?;
+            writeln!(f, "{}", i)?;  // auxiliary bar on the right of coordinates
         }
 
         print_horizontal_bar(f, self.columns as i32)?;
