@@ -5,6 +5,10 @@
 //!  2. a mine can be spawned at a position where in all straight
 //!   (vertical and horizontal) directions there is also mines or a wall
 //!
+//! TODO:
+//!  1. Show number of remaining mines to mark and
+//!   change [mark](board::Board::mark) logic.
+//!
 
 mod board;
 mod input;

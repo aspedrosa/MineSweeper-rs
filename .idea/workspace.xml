@@ -13,8 +13,7 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="bfecc5ce-a58b-438a-862a-e89c06672e66" name="Default Changelist" comment="cargo fmt">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    <list default="true" id="bfecc5ce-a58b-438a-862a-e89c06672e66" name="Default Changelist" comment="board + main docs">
       <change beforePath="$PROJECT_DIR$/src/board.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/board.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
     </list>
@@ -170,7 +169,14 @@
       <option name="project" value="LOCAL" />
       <updated>1612724936146</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="board + main docs">
+      <created>1612726989164</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1612726989164</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -205,7 +211,8 @@
     <MESSAGE value="implement win logic" />
     <MESSAGE value="All game logic done (some bugs exist though :D)" />
     <MESSAGE value="cargo fmt" />
-    <option name="LAST_COMMIT_MESSAGE" value="cargo fmt" />
+    <MESSAGE value="board + main docs" />
+    <option name="LAST_COMMIT_MESSAGE" value="board + main docs" />
   </component>
   <component name="WindowStateProjectService">
     <state x="2475" y="166" width="800" height="711" key="#Plugins" timestamp="1611710405637">
