@@ -75,10 +75,9 @@ pub struct Board {
     rows: u8,
     columns: u8,
     mines_count: u8,
+    cells_to_dig: u16,
 
     board: Vec<Vec<Cell>>,
-
-    marks: HashSet<(u8, u8)>,
 }
 
 impl Board {
@@ -101,8 +100,8 @@ impl Board {
             rows: params.rows(),
             columns: params.columns(),
             mines_count: params.mines(),
+            cells_to_dig: params.rows() as u16 * params.columns() as u16,
             board,
-            marks: HashSet::new(),
         }
     }
 
@@ -170,6 +169,7 @@ impl Board {
             current_mines += 1;
 
             self.board[row as usize][column as usize].value = CellValue::Mine;
+            self.cells_to_dig -= 1;
         }
 
         return mines;
@@ -194,9 +194,16 @@ impl Board {
         if !cell.dug && !cell.marked {
             match cell.value {
                 CellValue::Mine => return GameResult::Lost,
-                CellValue::Number(_) => cell.dug = true,
+                CellValue::Number(_) => {
+                    self.cells_to_dig -= 1;
+                    cell.dug = true
+                },
                 CellValue::Empty => self.propagate_dig(play),
             }
+        }
+
+        if self.cells_to_dig == 0 {
+            return GameResult::Won;
         }
 
         return GameResult::Continue;
@@ -218,18 +225,21 @@ impl Board {
         let mut seen = HashSet::<(i16, i16)>::new();
 
         while let Some((r, c)) = to_propagate.pop()  {
-            self.board[r as usize][c as usize].dug = true;
-            self.board[r as usize][c as usize].marked = false;
+            let cell = &mut self.board[r as usize][c as usize];
+            cell.dug = true;
+            cell.marked = false;
+            self.cells_to_dig -= 1;
 
             seen.insert((r as i16, c as i16));
 
-            if self.board[r as usize][c as usize].value.is_number() {
+            if cell.value.is_number() {
                 continue;
             }
 
             to_propagate.extend(
                 self.generate_ring((r as u8, c as u8))
                 .filter(|(r, c)| self.board[*r as usize][*c as usize].value != CellValue::Mine)
+                .filter(|(r, c)| !self.board[*r as usize][*c as usize].dug)
                 .filter(|cell| !seen.contains(cell))
             )
         }
@@ -244,7 +254,7 @@ impl Board {
 
     pub fn unmark(&mut self, (row, col): (u8, u8)) {
         let cell = &mut self.board[row as usize][col as usize];
-        if cell.marked {
+        if !cell.dug {
             cell.marked ^= cell.marked
         }
     }
