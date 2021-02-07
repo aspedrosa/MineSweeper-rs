@@ -44,6 +44,7 @@ fn main() {
                         }
                     }
                     PlayMode::Mark => board.mark(play.cell()),
+                    PlayMode::Unmark => board.unmark(play.cell()),
                 };
 
                 println!("{}", board);
@@ -52,5 +53,5 @@ fn main() {
         };
     }
 
-    println!("{}", board);
+    board.finish();
 }

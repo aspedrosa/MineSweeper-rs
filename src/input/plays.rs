@@ -7,6 +7,7 @@ use std::fmt::Formatter;
 pub enum PlayMode {
     Dig,
     Mark,
+    Unmark,
 }
 
 pub struct Play {
@@ -89,6 +90,7 @@ pub fn read_following_plays() -> Result<Play, InvalidPlay> {
     let cell = handle_cell(&inputs, 1)?;
 
     let mode = match inputs[0] {
+        "u" => PlayMode::Unmark,
         "m" => PlayMode::Mark,
         "d" => PlayMode::Dig,
         _ => return Err(InvalidPlay {}),
