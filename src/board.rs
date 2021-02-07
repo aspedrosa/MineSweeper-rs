@@ -1,79 +1,95 @@
-use itertools::Itertools;
+use itertools::{Itertools, enumerate};
 use rand::Rng;
 use std::collections::HashSet;
-use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
 
 use crate::input::arguments::Parameters;
-
-pub struct Cell(u8, u8);
-
-impl PartialEq for Cell {
-    fn eq(&self, other: &Self) -> bool {
-        return self.0 == other.0 && self.1 == other.1;
-    }
-}
-
-impl Eq for Cell {}
-
-impl Hash for Cell {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.0.hash(state);
-        self.1.hash(state);
-    }
-}
-
-impl Cell {
-    pub fn new(x: u8, y: u8) -> Cell {
-        return Cell(x, y);
-    }
-}
+use core::fmt;
+use std::fmt::Formatter;
 
 pub enum GameResult {
     Lost,
     Won,
-    None,
+    Continue,
 }
+
+#[derive(PartialEq, Eq, Clone, Copy)]
+enum CellValue {
+    Empty,
+    Mine,
+    Number(u8),
+}
+
+impl fmt::Display for CellValue {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            CellValue::Empty => write!(f, " "),
+            CellValue::Mine => write!(f, "X"),
+            CellValue::Number(n) => write!(f, "{}", n),
+        }
+    }
+}
+
+struct Cell {
+    dug: bool,
+    marked: bool,
+    value: CellValue,
+}
+
+impl fmt::Display for Cell {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        if self.marked {
+            write!(f, "X")
+        }
+        else {
+            if self.dug {
+                self.value.fmt(f)
+            }
+            else {
+                write!(f, "?")
+            }
+        }
+    }
+}
+
 
 pub struct Board {
     rows: u8,
     columns: u8,
     mines_count: u8,
 
-    display: Vec<Vec<i8>>,
-    board: Vec<Vec<i8>>,
+    board: Vec<Vec<Cell>>,
 
-    marks: HashSet<Cell>,
+    marks: HashSet<(u8, u8)>,
 }
 
 impl Board {
     pub fn new(params: &Parameters) -> Board {
-        let mut board = Vec::<Vec<i8>>::with_capacity(params.rows() as usize);
-        let mut display = Vec::<Vec<i8>>::with_capacity(params.rows() as usize);
+        let mut board = Vec::<Vec<Cell>>::with_capacity(params.rows() as usize);
 
         for _ in 0..params.rows() {
-            let mut row1 = Vec::<i8>::with_capacity(params.columns() as usize);
-            let mut row2 = Vec::<i8>::with_capacity(params.columns() as usize);
+            let mut row1 = Vec::<Cell>::with_capacity(params.columns() as usize);
             for _ in 0..params.columns() {
-                row1.push(0);
-                row2.push(-2);
+                row1.push(Cell {
+                    dug: false,
+                    marked: false,
+                    value: CellValue::Empty,
+                });
             }
             board.push(row1);
-            display.push(row2)
         }
 
         Board {
             rows: params.rows(),
             columns: params.columns(),
             mines_count: params.mines(),
-            display,
             board,
             marks: HashSet::new(),
         }
     }
 
-    pub fn build(&mut self, start_cell: Cell) {
-        self.display[start_cell.0 as usize][start_cell.1 as usize] = 0;
+    pub fn build(&mut self, start_cell: (u8, u8)) {
+        self.board[start_cell.0 as usize][start_cell.1 as usize].value = CellValue::Empty;
 
         let EMPTY_CELLS = 40; // TODO calculate this according to difficulty
 
@@ -99,9 +115,9 @@ impl Board {
                 || new_cell_y < 0
                 || new_cell_y >= self.rows as i16)
             {
-                let new_cell = Cell(new_cell_x as u8, new_cell_y as u8);
+                let new_cell = (new_cell_x as u8, new_cell_y as u8);
 
-                self.display[new_cell.0 as usize][new_cell.1 as usize] = 0;
+                self.board[new_cell.0 as usize][new_cell.1 as usize].value = CellValue::Empty;
 
                 if !initial_empty_cells.contains(&new_cell) {
                     initial_empty_cells.push(new_cell);
@@ -109,13 +125,13 @@ impl Board {
             }
         }
 
-        let initial_empty_cells = HashSet::<Cell>::from_iter(initial_empty_cells.into_iter());
+        let initial_empty_cells = HashSet::<(u8, u8)>::from_iter(initial_empty_cells.into_iter());
         let mines = self.place_mines(&initial_empty_cells);
         self.place_numbers(mines);
         self.show_numbers_border(initial_empty_cells);
     }
 
-    fn place_mines(&mut self, initial_empty_cells: &HashSet<Cell>) -> HashSet<Cell> {
+    fn place_mines(&mut self, initial_empty_cells: &HashSet<(u8, u8)>) -> HashSet<(u8, u8)> {
         let mut mines = HashSet::with_capacity(self.mines_count as usize);
 
         let mut current_mines = 0;
@@ -125,7 +141,7 @@ impl Board {
             let row = random.gen_range(0..self.rows) as u8;
             let column = random.gen_range(0..self.columns) as u8;
 
-            let m = Cell(row, column);
+            let m = (row, column);
 
             if mines.contains(&m) || initial_empty_cells.contains(&m) {
                 continue;
@@ -135,13 +151,13 @@ impl Board {
 
             current_mines += 1;
 
-            self.board[row as usize][column as usize] = -1;
+            self.board[row as usize][column as usize].value = CellValue::Mine;
         }
 
         return mines;
     }
 
-    fn place_numbers(&mut self, mines: HashSet<Cell>) {
+    fn place_numbers(&mut self, mines: HashSet<(u8, u8)>) {
         let columns = self.columns;
         let rows = self.rows;
 
@@ -160,95 +176,70 @@ impl Board {
                         && cell_y >= 0
                         && cell_y < columns as i16;
                 })
-                .map(|v| Cell((mine.0 as i16 + v[0]) as u8, (mine.1 as i16 + v[1]) as u8))
+                .map(|v| ((mine.0 as i16 + v[0]) as u8, (mine.1 as i16 + v[1]) as u8))
                 .filter(|cell| !mines.contains(&cell))
             {
-                self.board[cell.0 as usize][cell.1 as usize] += 1;
+                match self.board[cell.0 as usize][cell.1 as usize].value {
+                    CellValue::Number(ref mut n) => *n = *n + 1,
+                    _ => self.board[cell.0 as usize][cell.1 as usize].value = CellValue::Number(1),
+                }
             }
         }
     }
 
-    fn show_numbers_border(&mut self, initial_empty_cells: HashSet<Cell>) {
-        for empty_cell in initial_empty_cells.iter() {
+    fn show_numbers_border(&mut self, initial_empty_cells: HashSet<(u8, u8)>) {
+        let initial_empty_cells = initial_empty_cells.iter().filter(|c| self.board[c.0 as usize][c.1 as usize].value == CellValue::Empty).collect::<Vec<&(u8, u8)>>();
+        for empty_cell in initial_empty_cells {
             for adjacent_cell in (-1..=1)
                 .chain(-1..=1)
                 .combinations_with_replacement(2)
                 .unique()
-                .filter(|v| {
+                .map(|v| {
                     let cell_x = empty_cell.0 as i16 + v[0];
                     let cell_y = empty_cell.1 as i16 + v[1];
 
-                    return cell_x >= 0
-                        && cell_x < self.rows as i16
-                        && cell_y >= 0
-                        && cell_y < self.columns as i16;
+                    vec!(cell_x, cell_y)
                 })
-                .filter(|v| self.board[v[0] as usize][v[1] as usize] == -1) {
-                self.board[adjacent_cell[0] as usize][adjacent_cell[1] as usize] += 1;
+                .filter(|v|
+                    v[0] >= 0
+                        && v[0] < self.rows as i16
+                        && v[1] >= 0
+                        && v[1] < self.columns as i16
+                )
+                .filter(|v| self.board[v[0] as usize][v[1] as usize].value != CellValue::Mine)
+                .collect::<Vec<Vec<i16>>>()
+            {
+                self.board[adjacent_cell[0] as usize][adjacent_cell[1] as usize].value = self.board[adjacent_cell[0] as usize][adjacent_cell[1] as usize].value;
             }
         }
     }
 
-    pub fn dig(&mut self, cell: Cell) -> GameResult {
-        if self.display[cell.0 as usize][cell.1 as usize] == -2 {
-            match self.board[cell.0 as usize][cell.1 as usize] {
-                -1 => return GameResult::Lost,
-                0 => {
-                    // propagate dig
-                }
-                v => self.display[cell.0 as usize][cell.1 as usize] = v,
-            }
+    pub fn dig(&mut self, cell: (u8, u8)) -> GameResult {
+        //
 
-            // check if won
-        }
-
-        return GameResult::None;
+        return GameResult::Continue;
     }
 
-    pub fn mark(&mut self, cell: Cell) {
-        self.display[cell.0 as usize][cell.1 as usize] =
-            match self.display[cell.0 as usize][cell.1 as usize] {
-                -2 => -1,
-                -1 => -2,
-                v => v,
-            };
+    pub fn mark(&mut self, cell: (u8, u8)) {
+        self.board[cell.0 as usize][cell.1 as usize].marked = !(self.board[cell.0 as usize][cell.1 as usize].marked ^ self.board[cell.0 as usize][cell.1 as usize].marked)
     }
 
-    pub fn print_board(&self) {
+    pub fn unmark(&mut self, cell: (u8, u8)) {
+        self.board[cell.0 as usize][cell.1 as usize].marked ^= self.board[cell.0 as usize][cell.1 as usize].marked
+    }
+}
+
+impl fmt::Display for Board {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         for row in self.board.iter() {
-            for (i, v) in row.iter().enumerate() {
-                if *v == -1 {
-                    print!("#");
-                } else if *v == 0 {
-                    print!(" ");
-                } else {
-                    print!("{}", v);
-                }
-                if i != row.len() {
-                    print!(" ");
+            for (i, cell) in enumerate(row) {
+                cell.fmt(f)?;
+                if i != row.len() - 1 {
+                    write!(f, " ")?;
                 }
             }
-            println!();
+            writeln!(f)?;
         }
-    }
-
-    pub fn print_display(&self) {
-        for row in self.display.iter() {
-            for (i, v) in row.iter().enumerate() {
-                if *v == -2 {
-                    print!("?");
-                } else if *v == -1 {
-                    print!("X");
-                } else if *v == 0 {
-                    print!(" ");
-                } else {
-                    print!("{}", v);
-                }
-                if i != row.len() {
-                    print!(" | ");
-                }
-            }
-            println!();
-        }
+        Ok(())
     }
 }

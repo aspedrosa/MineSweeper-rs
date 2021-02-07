@@ -15,7 +15,7 @@ fn main() {
         match read_first_play() {
             Ok(mut play) => {
                 board.build(play.cell());
-                board.print_display();
+                println!("{}", board);
                 break;
             }
             Err(e) => println!("{}", e),
@@ -36,7 +36,7 @@ fn main() {
                                 println!("You lost");
                                 true
                             }
-                            GameResult::None => false,
+                            GameResult::Continue => false,
                         };
 
                         if end {
@@ -46,11 +46,11 @@ fn main() {
                     PlayMode::Mark => board.mark(play.cell()),
                 };
 
-                board.print_display();
+                println!("{}", board);
             }
             Err(e) => println!("{}", e),
         };
     }
 
-    board.print_board();
+    println!("{}", board);
 }

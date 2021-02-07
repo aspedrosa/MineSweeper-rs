@@ -1,7 +1,6 @@
 use std::io::Write;
 use std::{fmt, io};
 
-use crate::board::Cell;
 use std::error::Error;
 use std::fmt::Formatter;
 
@@ -12,7 +11,7 @@ pub enum PlayMode {
 
 pub struct Play {
     mode: PlayMode,
-    cell: Option<Cell>,
+    cell: Option<(u8, u8)>,
 }
 
 impl Play {
@@ -20,7 +19,7 @@ impl Play {
         return &self.mode;
     }
 
-    pub fn cell(&mut self) -> Cell {
+    pub fn cell(&mut self) -> (u8, u8) {
         return self.cell.take().unwrap();
     }
 }
@@ -42,7 +41,7 @@ fn read_play(input: &mut String) {
     io::stdin().read_line(input);
 }
 
-fn handle_cell(inputs: &Vec<&str>, first_index: u8) -> Result<Cell, InvalidPlay> {
+fn handle_cell(inputs: &Vec<&str>, first_index: u8) -> Result<(u8, u8), InvalidPlay> {
     let row = match inputs[first_index as usize].parse::<u8>() {
         Ok(v) => v,
         Err(_) => return Err(InvalidPlay {}),
@@ -53,7 +52,7 @@ fn handle_cell(inputs: &Vec<&str>, first_index: u8) -> Result<Cell, InvalidPlay>
     };
 
     return Ok(
-        Cell::new(row, column)
+        (row, column)
     );
 }
 
