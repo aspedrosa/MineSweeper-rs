@@ -15,10 +15,10 @@
   <component name="ChangeListManager">
     <list default="true" id="bfecc5ce-a58b-438a-862a-e89c06672e66" name="Default Changelist" comment="All game logic done (some bugs exist though :D)">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/board.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/board.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/input.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/input.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/input/arguments.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/input/arguments.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/input/plays.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/input/plays.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -71,6 +71,7 @@
     <property name="nodejs_package_manager_path" value="npm" />
     <property name="org.rust.cargo.project.model.PROJECT_DISCOVERY" value="true" />
     <property name="restartRequiresConfirmation" value="false" />
+    <property name="run.code.analysis.last.selected.profile" value="pProject Default" />
     <property name="settings.editor.selected.configurable" value="preferences.lookFeel" />
   </component>
   <component name="RunManager">
@@ -127,7 +128,7 @@
       <workItem from="1611797229036" duration="6234000" />
       <workItem from="1611942327458" duration="137000" />
       <workItem from="1612538637396" duration="120000" />
-      <workItem from="1612698104964" duration="20432000" />
+      <workItem from="1612698104964" duration="22474000" />
     </task>
     <task id="LOCAL-00001" summary="first draft">
       <created>1611801789467</created>
@@ -157,7 +158,14 @@
       <option name="project" value="LOCAL" />
       <updated>1612718139479</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="All game logic done (some bugs exist though :D)">
+      <created>1612722452398</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1612722452398</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -192,6 +200,10 @@
       <screen x="1920" y="0" width="1920" height="1080" />
     </state>
     <state x="2693" y="241" width="374" height="561" key="#com.intellij.ide.util.MemberChooser/1920.0.1920.1080/0.0.1920.1044@1920.0.1920.1080" timestamp="1612701609469" />
+    <state x="2629" y="375" key="ANALYSIS_DLG_com.intellij.analysis.BaseAnalysisAction$1" timestamp="1612722907955">
+      <screen x="1920" y="0" width="1920" height="1080" />
+    </state>
+    <state x="2629" y="375" key="ANALYSIS_DLG_com.intellij.analysis.BaseAnalysisAction$1/1920.0.1920.1080/0.0.1920.1044@1920.0.1920.1080" timestamp="1612722907955" />
     <state width="1874" height="604" key="GridCell.Tab.0.bottom" timestamp="1612721932762">
       <screen x="1920" y="0" width="1920" height="1080" />
     </state>
