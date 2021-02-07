@@ -5,6 +5,13 @@ use crate::board::{Board, GameResult};
 use crate::input::arguments::{read_parameters, Parameters};
 use crate::input::plays::{read_first_play, read_following_plays, PlayMode};
 
+/**
+bugs:
+1. some times after the first play only one cell is displayed
+2. a mine can be spawned at a position where in all straight
+ (vertical and horizontal) directions there is also mines or a wall
+*/
+
 fn main() {
     //let a = read_parameters();
     let params = Parameters::new(15, 30, 50);

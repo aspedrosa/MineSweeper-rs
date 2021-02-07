@@ -7,6 +7,7 @@ use ansi_term;
 use crate::input::arguments::Parameters;
 use core::fmt;
 use std::fmt::Formatter;
+use std::borrow::{BorrowMut, Borrow};
 
 pub enum GameResult {
     Lost,
@@ -57,7 +58,7 @@ struct Cell {
 impl fmt::Display for Cell {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         if self.marked {
-            write!(f, "X")
+            write!(f, "{}", ansi_term::Color::Red.paint("X"))
         }
         else {
             if self.dug {
@@ -76,6 +77,7 @@ pub struct Board {
     columns: u8,
     mines_count: u8,
     cells_to_dig: u16,
+    deadly_mine: Option<(u8, u8)>,
 
     board: Vec<Vec<Cell>>,
 }
@@ -102,6 +104,7 @@ impl Board {
             mines_count: params.mines(),
             cells_to_dig: params.rows() as u16 * params.columns() as u16,
             board,
+            deadly_mine: None,
         }
     }
 
@@ -193,7 +196,10 @@ impl Board {
         let mut cell = &mut self.board[play.0 as usize][play.1 as usize];
         if !cell.dug && !cell.marked {
             match cell.value {
-                CellValue::Mine => return GameResult::Lost,
+                CellValue::Mine => {
+                    self.deadly_mine = Some(play);
+                    return GameResult::Lost;
+                },
                 CellValue::Number(_) => {
                     self.cells_to_dig -= 1;
                     cell.dug = true
@@ -203,6 +209,13 @@ impl Board {
         }
 
         if self.cells_to_dig == 0 {
+            for row in self.board.iter_mut() {
+                row
+                    .iter_mut()
+                    .filter(|cell| cell.value == CellValue::Mine)
+                    .for_each(|cell| cell.marked = true);
+            }
+
             return GameResult::Won;
         }
 
@@ -260,11 +273,16 @@ impl Board {
     }
 
     pub fn finish(&self) {
-        for row in self.board.iter() {
-            for (i, cell) in enumerate(row) {
+        for (i, row) in enumerate(&self.board) {
+            for (j, cell) in enumerate(row) {
                 if !cell.marked {
                     match cell.value {
-                        CellValue::Mine => print!("{}", ansi_term::Color::Yellow.paint("X")),
+                        CellValue::Mine => {
+                            match self.deadly_mine {
+                                Some(deadly_mine) if deadly_mine == (i as u8, j as u8) => print!("{}", ansi_term::Color::Red.paint("O")),
+                                _ => print!("{}", ansi_term::Color::Yellow.paint("O")),
+                            }
+                        },
                         v if cell.dug => print!("{}", v),
                         _ => print!("?"),
                     }
@@ -275,7 +293,7 @@ impl Board {
                         _ => print!("{}", ansi_term::Color::Red.paint("X")),
                     }
                 }
-                if i != row.len() - 1 {
+                if j != row.len() - 1 {
                     print!(" ");
                 }
             }

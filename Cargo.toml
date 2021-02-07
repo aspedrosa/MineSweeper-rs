@@ -1,6 +1,6 @@
 [package]
 name = "mineswipper"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["aspedrosa <aspedrosa@ua.pt>"]
 edition = "2018"
 
